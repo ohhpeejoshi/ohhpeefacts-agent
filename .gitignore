@@ -1,0 +1,21 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output files
+output/*.jpg
+output/*.txt
+
+# Downloaded assets
+assets/font*.ttf
+
+# OS generated files
+.DS_Store
