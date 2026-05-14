@@ -1,6 +1,8 @@
 # OhhpeeFacts — Daily Instagram Fact Image Generator
 
-OhhpeeFacts is a lightweight Python automation bot that generates a lesser-known, surprising fact daily using the Gemini API, alongside a ready-to-post Instagram caption. It then uses Pillow to create a professional, branded 1080x1080 graphic featuring the fact and your logo, and automatically runs every day at 9:00 AM UTC via GitHub Actions.
+Disclaimer: This is an early stage project, and may not be production ready. It does not create very good images yet. I am working on improving it. Also, while I'm trying to make it generate facts about the world, it might generate facts that are factually incorrect. I'll try to fix it over time. 
+
+OhhpeeFacts is an early stage lightweight Python automation bot that generates a lesser-known, surprising fact daily using the Gemini API, alongside a ready-to-post Instagram caption. It then uses Pillow to create a professional, branded 1080x1080 graphic featuring the fact and your logo, and automatically runs every day at 9:00 AM UTC via GitHub Actions.
 
 ## One-Time Setup
 
