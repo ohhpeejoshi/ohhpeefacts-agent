@@ -11,8 +11,8 @@ __pycache__/
 *$py.class
 
 # Output files
-output/*.jpg
-output/*.txt
+output/**
+!output/.gitkeep
 
 # Downloaded assets
 assets/font*.ttf

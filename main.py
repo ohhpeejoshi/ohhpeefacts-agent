@@ -34,12 +34,14 @@ def main():
         print(f"\n✅ Fact generated: [{topic}] {fact_text}\n")
         
         # 3. Create image
-        output_dir = os.path.join(os.path.dirname(__file__), "output")
-        image_path = create_instagram_image(content, output_dir=output_dir)
+        run_started_at = datetime.now()
+        date_str = run_started_at.strftime("%d-%m-%y")
+        timestamp = run_started_at.strftime("%Y%m%d_%H%M%S_%f")
+        output_dir = os.path.join(os.path.dirname(__file__), "output", date_str)
+        image_path = create_instagram_image(content, output_dir=output_dir, timestamp=timestamp)
         
         # 4. Save caption
-        date_str = datetime.now().strftime("%Y%m%d")
-        caption_path = os.path.join(output_dir, f"caption_{date_str}.txt")
+        caption_path = os.path.join(output_dir, f"caption_{timestamp}.txt")
         caption_text = content.get("caption", "")
         
         with open(caption_path, "w", encoding="utf-8") as f:

@@ -2,7 +2,7 @@
 
 Disclaimer: This is an early stage project, and may not be production ready. It does not create very good images yet. I am working on improving it. Also, while I'm trying to make it generate facts about the world, it might generate facts that are factually incorrect. I'll try to fix it over time. 
 
-OhhpeeFacts is an early stage lightweight Python automation bot that generates a lesser-known, surprising fact daily using the Gemini API, alongside a ready-to-post Instagram caption. It then uses Pillow to create a professional, branded 1080x1080 graphic featuring the fact and your logo, and automatically runs every day at 9:00 AM UTC via GitHub Actions.
+OhhpeeFacts is an early stage lightweight Python automation bot that generates a lesser-known, surprising fact using the Gemini API, alongside a ready-to-post Instagram caption. It then uses Pillow to create a professional, branded 1080x1080 graphic, and automatically runs every day at 9:00 AM and 3:00 PM Asia/Kolkata via GitHub Actions.
 
 ## One-Time Setup
 
@@ -54,11 +54,11 @@ If you want to test the script on your own computer:
    ```bash
    python main.py
    ```
-5. The generated files will be saved in the `output/` folder.
+5. The generated files will be saved in a dated folder inside `output/`.
 
 ## Output Folder Contents Explained
 
 After running successfully (either locally or via GitHub Actions), you'll get:
 
-- `output/ohhpeefacts_YYYYMMDD.jpg` → The professional 1080x1080 image, ready to post to Instagram.
-- `output/caption_YYYYMMDD.txt` → A text file containing your conversational caption, hashtags, and a call-to-action, ready to paste into Instagram.
+- `output/DD-MM-YY/ohhpeefacts_YYYYMMDD_HHMMSS_microseconds.jpg` → The professional 1080x1080 image, ready to post to Instagram.
+- `output/DD-MM-YY/caption_YYYYMMDD_HHMMSS_microseconds.txt` → A text file containing your conversational caption, hashtags, and a call-to-action, ready to paste into Instagram.

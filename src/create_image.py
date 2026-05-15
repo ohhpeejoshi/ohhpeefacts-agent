@@ -18,12 +18,18 @@ COLOR_SCHEMES = {
 def apply_opacity(color: Tuple[int, int, int], opacity_percent: int) -> Tuple[int, int, int, int]:
     return (*color, int(255 * (opacity_percent / 100.0)))
 
-def get_font(path: str, size: int) -> ImageFont.FreeTypeFont:
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception as e:
-        logger.warning(f"Could not load font {path}. Using default. Error: {e}")
-        return ImageFont.load_default()
+def get_font(path: str, size: int, fallbacks: Tuple[str, ...] = ()) -> ImageFont.FreeTypeFont:
+    font_paths = (path, *fallbacks)
+    for font_path in font_paths:
+        if not font_path:
+            continue
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:
+            continue
+
+    logger.warning(f"Could not load requested fonts for size {size}. Using Pillow default.")
+    return ImageFont.load_default()
 
 def draw_radial_bg(img: Image.Image, bg_color: Tuple[int, int, int]):
     draw = ImageDraw.Draw(img, "RGBA")
@@ -39,7 +45,7 @@ def draw_radial_bg(img: Image.Image, bg_color: Tuple[int, int, int]):
         bbox = [shrink, shrink, 1080 - shrink, 1080 - shrink]
         draw.rounded_rectangle(bbox, radius=100, fill=(r, g, b, 255))
 
-def create_instagram_image(content: Dict[str, str], output_dir: str = "output") -> str:
+def create_instagram_image(content: Dict[str, str], output_dir: str = "output", timestamp: str | None = None) -> str:
     """
     Creates the Instagram image given the fact content.
     Returns the file path of the saved image.
@@ -53,66 +59,59 @@ def create_instagram_image(content: Dict[str, str], output_dir: str = "output") 
     img = Image.new("RGBA", (1080, 1080), (*scheme["bg"], 255))
     draw_radial_bg(img, scheme["bg"])
     
-    # Layer 2: Logo Watermark
     assets_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
-    logo_path_png = os.path.join(assets_dir, "logo.png")
-    logo_path_jpg = os.path.join(assets_dir, "logo.jpg")
-    
-    logo_path = logo_path_png if os.path.exists(logo_path_png) else (logo_path_jpg if os.path.exists(logo_path_jpg) else None)
-    
-    if logo_path:
-        try:
-            logo = Image.open(logo_path).convert("RGBA")
-            # Resize within 700x700
-            logo.thumbnail((700, 700), Image.Resampling.LANCZOS)
-            
-            # Apply 35/255 opacity
-            r, g, b, a = logo.split()
-            a = a.point(lambda x: int(x * (35 / 255.0)))
-            logo = Image.merge("RGBA", (r, g, b, a))
-            
-            x = (1080 - logo.width) // 2
-            y = (1080 - logo.height) // 2
-            img.alpha_composite(logo, (x, y))
-        except Exception as e:
-            logger.warning(f"Failed to load or composite logo: {e}")
-    else:
-        logger.warning("Logo file not found in assets. Skipping watermark.")
 
     draw = ImageDraw.Draw(img, "RGBA")
     font_bold_path = os.path.join(assets_dir, "font_bold.ttf")
     font_regular_path = os.path.join(assets_dir, "font_regular.ttf")
+    system_bold_fallbacks = (
+        "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        "/System/Library/Fonts/SFNS.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    )
+    system_regular_fallbacks = (
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/SFNS.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    )
     
-    # Layer 4 (Top): Topic Label
-    topic_text = f"🔬 {content.get('topic', 'FACT').upper()}"
-    topic_font = get_font(font_bold_path, 32)
-    # Using textbbox to center text
+    # Top brand heading
+    brand_text = "OhhPeeFacts"
+    brand_font = get_font(font_bold_path, 86, system_bold_fallbacks)
+    bbox = draw.textbbox((0, 0), brand_text, font=brand_font)
+    bw = bbox[2] - bbox[0]
+    draw.text(((1080 - bw) / 2, 58), brand_text, font=brand_font, fill=(*scheme["text"], 255))
+
+    # Topic label below the heading
+    topic_text = content.get('topic', 'FACT').upper()
+    topic_font = get_font(font_bold_path, 34, system_bold_fallbacks)
     bbox = draw.textbbox((0, 0), topic_text, font=topic_font)
     tw = bbox[2] - bbox[0]
-    draw.text(((1080 - tw) / 2, 90), topic_text, font=topic_font, fill=(*scheme["accent"], 255))
+    draw.text(((1080 - tw) / 2, 170), topic_text, font=topic_font, fill=(*scheme["accent"], 255))
     
     # Thin line below topic
-    line_y = 145
-    line_w = 180
+    line_y = 225
+    line_w = 260
     line_color = apply_opacity(scheme["accent"], 50)
     draw.line([(1080 - line_w) / 2, line_y, (1080 + line_w) / 2, line_y], fill=line_color, width=2)
     
     # Text scaling and wrapping logic
     fact_text = content.get("image_text", "")
-    font_size = 68
-    max_width = 1080 - 200 # 880px max width
+    font_size = 110
+    max_width = 1080 - 120 # 960px max width
     
     wrapped_lines = []
     final_font = None
     
-    while font_size >= 20:
-        final_font = get_font(font_bold_path, font_size)
+    while font_size >= 44:
+        final_font = get_font(font_bold_path, font_size, system_bold_fallbacks)
         
-        # Word wrap: max 22 characters per line
-        wrapper = textwrap.TextWrapper(width=22)
+        # Word wrap: short lines keep the graphic punchy while using a large font.
+        wrapper = textwrap.TextWrapper(width=18)
         lines = wrapper.wrap(fact_text)
         
-        if len(lines) > 5:
+        if len(lines) > 6:
             font_size -= 4
             continue
             
@@ -132,14 +131,15 @@ def create_instagram_image(content: Dict[str, str], output_dir: str = "output") 
             break
             
     if not wrapped_lines:
-        wrapped_lines = textwrap.wrap(fact_text, width=22)[:5]
-        final_font = get_font(font_bold_path, 30)
+        wrapped_lines = textwrap.wrap(fact_text, width=18)[:6]
+        final_font = get_font(font_bold_path, 44, system_bold_fallbacks)
+        font_size = 44
 
     # Draw Text and Drop Shadow (Layer 3 and 4)
-    # Vertically centre text block between y=300 and y=780
-    line_height = font_size * 1.2
+    # Vertically centre text block in the primary reading area.
+    line_height = font_size * 1.12
     total_text_height = len(wrapped_lines) * line_height
-    start_y = 300 + ((780 - 300) - total_text_height) / 2
+    start_y = 275 + ((835 - 275) - total_text_height) / 2
     
     shadow_color = (0, 0, 0, int(255 * 0.40)) # 40% opacity black
     
@@ -150,7 +150,7 @@ def create_instagram_image(content: Dict[str, str], output_dir: str = "output") 
         y = start_y + (i * line_height)
         
         # Drop shadow
-        draw.text((x + 3, y + 3), line, font=final_font, fill=shadow_color)
+        draw.text((x + 4, y + 4), line, font=final_font, fill=shadow_color)
         
         # Actual text
         draw.text((x, y), line, font=final_font, fill=(*scheme["text"], 255))
@@ -161,7 +161,7 @@ def create_instagram_image(content: Dict[str, str], output_dir: str = "output") 
     draw.line([padding, 900, 1080 - padding, 900], fill=branding_line_color, width=1)
     
     branding_text = "A fact a day  •  @ohhpeefacts"
-    branding_font = get_font(font_regular_path, 28)
+    branding_font = get_font(font_regular_path, 28, system_regular_fallbacks)
     bbox = draw.textbbox((0, 0), branding_text, font=branding_font)
     bw = bbox[2] - bbox[0]
     
@@ -170,8 +170,9 @@ def create_instagram_image(content: Dict[str, str], output_dir: str = "output") 
     
     # Save Image
     os.makedirs(output_dir, exist_ok=True)
-    date_str = datetime.now().strftime("%Y%m%d")
-    out_path = os.path.join(output_dir, f"ohhpeefacts_{date_str}.jpg")
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    out_path = os.path.join(output_dir, f"ohhpeefacts_{timestamp}.jpg")
     
     final_img = img.convert("RGB")
     final_img.save(out_path, "JPEG", quality=95)
