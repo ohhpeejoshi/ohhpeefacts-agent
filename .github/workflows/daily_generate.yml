@@ -10,6 +10,7 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       TZ: Asia/Kolkata
     
     steps:
@@ -37,6 +38,9 @@ jobs:
           mkdir -p assets
           curl -L "https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Bold.ttf" -o assets/font_bold.ttf
           curl -L "https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Regular.ttf" -o assets/font_regular.ttf
+
+      - name: Show scheduled run time
+        run: date
           
       - name: Run script
         env:
