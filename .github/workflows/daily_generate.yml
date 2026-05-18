@@ -2,8 +2,8 @@ name: Daily Generate
 
 on:
   schedule:
-    # GitHub Actions cron uses UTC. These run at 09:00 and 15:00 Asia/Kolkata.
-    - cron: '30 3,9 * * *'
+    # GitHub Actions cron uses UTC. This runs at 09:00 Asia/Kolkata.
+    - cron: '30 3 * * *'
   workflow_dispatch:
 
 jobs:
